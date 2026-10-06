@@ -81,13 +81,14 @@ export function SkillsSection({ skills = [] }) {
             whileFocusWithin={{ scale: 1.02 }}
             transition={T.fast}
           >
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
             <input
               type="text"
               placeholder="Search skills..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="hud-input pl-9"
+              className="hud-input pl-10"
+              style={{ paddingLeft: '2.5rem' }}
             />
           </motion.div>
         </motion.div>

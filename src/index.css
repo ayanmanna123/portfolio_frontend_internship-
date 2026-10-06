@@ -367,6 +367,12 @@ section h2 { text-transform: uppercase; letter-spacing: -0.055em; font-weight: 8
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
+.hud-input.pl-9,
+.hud-input.pl-10,
+.hud-input[class*="pl-9"],
+.hud-input[class*="pl-10"] {
+  padding-left: 2.5rem !important;
+}
 .hud-input::placeholder { color: var(--muted-foreground); }
 .hud-input:focus {
   border-color: var(--primary);

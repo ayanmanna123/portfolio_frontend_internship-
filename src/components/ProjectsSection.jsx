@@ -81,13 +81,14 @@ export function ProjectsSection({ projects = [] }) {
           </div>
 
           <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
             <input
               type="text"
               placeholder="Search projects..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="hud-input pl-9"
+              className="hud-input pl-10"
+              style={{ paddingLeft: '2.5rem' }}
             />
           </div>
         </div>

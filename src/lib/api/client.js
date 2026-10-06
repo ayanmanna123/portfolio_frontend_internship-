@@ -330,6 +330,18 @@ export const api = {
     }
   },
 
+  getBlog: async (slugOrId) => {
+    try {
+      const res = await apiRequest(`/blogs/${slugOrId}`);
+      return res.data || null;
+    } catch {
+      const fallback = FALLBACK_DATA.blogs.find(
+        (b) => b.slug === slugOrId || b._id === slugOrId
+      );
+      return fallback || null;
+    }
+  },
+
   getExperiences: async () => {
     try {
       const res = await apiRequest('/experience');

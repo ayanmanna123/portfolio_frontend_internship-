@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, Calendar, Clock, ArrowRight, Eye, Search } from 'lucide-react';
 import {
   motion,
@@ -13,6 +13,8 @@ import {
 
   viewportOnce,} from '@/lib/motion';
 import { SectionHeader } from './SectionHeader';
+import { BlogModal } from './BlogModal';
+import { api } from '@/lib/api/client';
 
 
 const DEFAULT_BLOGS = [
@@ -32,8 +34,57 @@ export function BlogSection({ blogs: posts = [] }) {
   const reduced = useReducedMotion();
   const trackPointer = useSpotlight();
   const [search, setSearch] = useState('');
+  const [selectedBlog, setSelectedBlog] = useState(null);
 
   const blogItems = posts && posts.length > 0 ? posts : DEFAULT_BLOGS;
+
+  // Sync URL on mount and on popstate (browser back/forward button or direct /blog/:slug load)
+  useEffect(() => {
+    let isCancelled = false;
+
+    const syncFromUrl = async () => {
+      const match = window.location.pathname.match(/^\/blog\/([^/]+)/);
+      if (match) {
+        const slug = decodeURIComponent(match[1]);
+        const existing = blogItems.find((p) => p.slug === slug || p._id === slug);
+        if (existing) {
+          if (!isCancelled) setSelectedBlog(existing);
+        } else {
+          try {
+            const fetched = await api.getBlog(slug);
+            if (!isCancelled && fetched) {
+              setSelectedBlog(fetched);
+            }
+          } catch {
+            // Silently ignore if blog not found
+          }
+        }
+      } else {
+        if (!isCancelled) setSelectedBlog(null);
+      }
+    };
+
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    return () => {
+      isCancelled = true;
+      window.removeEventListener('popstate', syncFromUrl);
+    };
+  }, [blogItems]);
+
+  const handleOpenBlog = (post) => {
+    setSelectedBlog(post);
+    if (post?.slug) {
+      window.history.pushState({ blogSlug: post.slug }, '', `/blog/${post.slug}`);
+    }
+  };
+
+  const handleCloseBlog = () => {
+    setSelectedBlog(null);
+    if (window.location.pathname.startsWith('/blog/')) {
+      window.history.pushState({}, '', '/#blog');
+    }
+  };
 
   const filtered = blogItems.filter((p) => {
     const q = search.toLowerCase();
@@ -50,21 +101,22 @@ export function BlogSection({ blogs: posts = [] }) {
 
         <SectionHeader
           icon={BookOpen}
-          label="Writings &amp; Thoughts"
-          title="Articles &amp; Engineering Insights"
+          label="Writings & Thoughts"
+          title="Articles & Engineering Insights"
           lede="Technical tutorials, custom architecture breakdowns, and web development best practices."
           className="mb-12"
         />
 
         {/* Search */}
         <div className="relative w-full sm:max-w-md mx-auto mb-10">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
           <input
             type="text"
             placeholder="Search articles by title or keyword..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="hud-input pl-9 w-full"
+            className="hud-input pl-10 w-full"
+            style={{ paddingLeft: '2.5rem' }}
           />
         </div>
 
@@ -96,26 +148,29 @@ export function BlogSection({ blogs: posts = [] }) {
                 {/* Meta */}
                 <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
+                    <Calendar className="w-3.5 h-3.5" />
                     {post.publishedAt
                       ? new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                       : 'Draft'}
                   </span>
                   {post.readTime && (
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
+                      <Clock className="w-3.5 h-3.5" />
                       {post.readTime} min read
                     </span>
                   )}
                   {post.views != null && (
                     <span className="flex items-center gap-1 ml-auto">
-                      <Eye className="w-3 h-3" />
+                      <Eye className="w-3.5 h-3.5" />
                       {post.views}
                     </span>
                   )}
                 </div>
 
-                <h3 className="text-base font-bold text-foreground group-hover:text-cyan-300 transition-colors leading-tight cursor-pointer">
+                <h3
+                  onClick={() => handleOpenBlog(post)}
+                  className="text-base font-bold text-foreground group-hover:text-cyan-300 transition-colors leading-tight cursor-pointer"
+                >
                   {post.title}
                 </h3>
 
@@ -137,7 +192,11 @@ export function BlogSection({ blogs: posts = [] }) {
               <div className="px-5 py-3 border-t border-cyan-500/10">
                 <a
                   href={post.slug ? `/blog/${post.slug}` : '#'}
-                  className="flex items-center gap-1.5 text-[10px] font-mono font-semibold text-cyan-400 hover:text-cyan-200 uppercase tracking-[.08em] transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleOpenBlog(post);
+                  }}
+                  className="flex items-center gap-1.5 text-[10px] font-mono font-semibold text-cyan-400 hover:text-cyan-200 uppercase tracking-[.08em] transition-colors cursor-pointer"
                 >
                   Read Article
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -149,6 +208,12 @@ export function BlogSection({ blogs: posts = [] }) {
         </div>
 
       </div>
+
+      <BlogModal
+        blog={selectedBlog}
+        isOpen={!!selectedBlog}
+        onClose={handleCloseBlog}
+      />
     </section>
   );
 }
