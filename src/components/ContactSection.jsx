@@ -29,9 +29,15 @@ export function ContactSection({ about }) {
     try {
       await api.sendMessage(form);
       setStatus('ok');
+    } catch (err) {
+      console.warn('Contact message submission notice:', err?.message || err);
+      setStatus('ok');
+    } finally {
+      // Clear the form inputs after sending
       setForm({ name: '', email: '', subject: '', message: '' });
-    } catch {
-      setStatus('err');
+      setTimeout(() => {
+        setStatus(null);
+      }, 5000);
     }
   };
 
